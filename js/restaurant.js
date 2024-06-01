@@ -34,6 +34,7 @@ const historyActions = {
   assignationDishes: (event) => {
     RestaurantApp.handleAssignDishes(event.state.menu);
   },
+  login: () => RestaurantApp.handleLoginForm(),
 };
 
 window.addEventListener("popstate", (event) => {

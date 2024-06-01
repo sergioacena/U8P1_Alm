@@ -90,4 +90,5 @@ export {
   NullException,
   NotRegisteredElementException,
   InvalidTypeException,
+  BaseException,
 };

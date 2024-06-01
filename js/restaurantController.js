@@ -1,13 +1,20 @@
+import { getCookie } from "./util.js";
 import { Coordinate } from "./entities.js";
 
 const MODEL = Symbol("RestaurantModel");
 const VIEW = Symbol("RestaurantView");
+
+const AUTH = Symbol("AUTH");
+const USER = Symbol("USER");
+
 const LOAD_RESTAURANT_OBJECTS = Symbol("Load Restaurant Objects");
 
 class RestaurantController {
-  constructor(model, view) {
+  constructor(model, view, auth) {
     this[MODEL] = model;
     this[VIEW] = view;
+    this[AUTH] = auth;
+    this[USER] = null;
     //Campo para mantener el contexto actual de los breadcrumbs
     this.currentContext = { type: "home", name: "Inicio", href: "#" };
 
@@ -222,19 +229,35 @@ class RestaurantController {
     this.onAddRestaurant();
 
     //t7 - forms
-    this[VIEW].showAdminMenu();
-    this[VIEW].bindAdminMenu(
-      this.handleNewDishForm,
-      this.handleRemoveDishForm,
-      this.handleNewCategoryForm,
-      this.handleRemoveCategoryForm,
-      this.handleNewRestaurantForm,
-      this.handleModifyCategoriesForm,
-      this.handleAssignDishesForm
-    );
+    // this[VIEW].showAdminMenu();
+    // this[VIEW].bindAdminMenu(
+    //   this.handleNewDishForm,
+    //   this.handleRemoveDishForm,
+    //   this.handleNewCategoryForm,
+    //   this.handleRemoveCategoryForm,
+    //   this.handleNewRestaurantForm,
+    //   this.handleModifyCategoriesForm,
+    //   this.handleAssignDishesForm
+    // );
 
     //t6 - cerrar ventanas desde navbar
     this[VIEW].createCloseWindow();
+
+    if (getCookie("acceptedCookieMessage") !== "true") {
+      this[VIEW].showCookiesMessage();
+    }
+
+    const userCookie = getCookie("activeUser");
+    if (userCookie) {
+      alert("Hola admin");
+      const user = this[AUTH].getUser(userCookie);
+      if (user) {
+        this[USER] = user;
+        this.onOpenSession();
+      }
+    } else {
+      this.onCloseSession();
+    }
   };
 
   onInit = () => {
@@ -674,6 +697,55 @@ class RestaurantController {
     });
     this[VIEW].showAssignDishesSelects(dishesInMenu, dishesNotInMenu);
   };
+
+  handleLoginForm = () => {
+    this[VIEW].showLogin();
+    this[VIEW].bindLogin(this.handleLogin);
+  };
+
+  handleLogin = (username, password, remember) => {
+    if (this[AUTH].validateUser(username, password)) {
+      alert("Hola admin");
+      this[USER] = this[AUTH].getUser(username);
+      this.onOpenSession();
+      if (remember) {
+        this[VIEW].setUserCookie(this[USER]);
+      }
+    } else {
+      this[VIEW].showInvalidUserMessage();
+    }
+  };
+
+  onOpenSession() {
+    this.onInit();
+    this[VIEW].initHistory();
+    this[VIEW].showAuthUserProfile(this[USER]);
+    this[VIEW].bindCloseSession(this.handleCloseSession);
+    this[VIEW].showAdminMenu();
+    this[VIEW].bindAdminMenu(
+      this.handleNewDishForm,
+      this.handleRemoveDishForm,
+      this.handleNewCategoryForm,
+      this.handleRemoveCategoryForm,
+      this.handleNewRestaurantForm,
+      this.handleModifyCategoriesForm,
+      this.handleAssignDishesForm
+    );
+  }
+
+  handleCloseSession = () => {
+    this.onCloseSession();
+    this.onInit();
+    this[VIEW].initHistory();
+  };
+
+  onCloseSession() {
+    this[USER] = null;
+    this[VIEW].deleteUserCookie();
+    this[VIEW].showIdentificationLink();
+    this[VIEW].bindIdentificationLink(this.handleLoginForm);
+    this[VIEW].removeAdminMenu();
+  }
 }
 
 export default RestaurantController;

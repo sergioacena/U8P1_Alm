@@ -7,6 +7,8 @@ const VIEW = Symbol("RestaurantView");
 const AUTH = Symbol("AUTH");
 const USER = Symbol("USER");
 
+const DISHES = Symbol("DISHES");
+
 const LOAD_RESTAURANT_OBJECTS = Symbol("Load Restaurant Objects");
 
 class RestaurantController {
@@ -228,7 +230,7 @@ class RestaurantController {
     this.onAddMenu();
     this.onAddRestaurant();
 
-    //t7 - forms
+    //t7 - forms - hecho abajo en openSession
     // this[VIEW].showAdminMenu();
     // this[VIEW].bindAdminMenu(
     //   this.handleNewDishForm,
@@ -249,7 +251,6 @@ class RestaurantController {
 
     const userCookie = getCookie("activeUser");
     if (userCookie) {
-      alert("Hola admin");
       const user = this[AUTH].getUser(userCookie);
       if (user) {
         this[USER] = user;
@@ -261,11 +262,12 @@ class RestaurantController {
   };
 
   onInit = () => {
-    // Muestra las categorías y los platos aleatorios
+    const isLoggedIn = this[USER] !== null;
     this[VIEW].showCategories(this[MODEL].getterCategories());
-    this[VIEW].showRandomProduct(this[MODEL].getterDishes());
     this[VIEW].bindProductsCategoryList(this.handleProductsCategoryList);
+    this[VIEW].showRandomProduct(this[MODEL].getterDishes());
     this[VIEW].bindShowRandomProduct(this.handleShowProduct);
+    this[VIEW].bindFavDishHandler(this.handleFavDish);
   };
 
   handleInit = () => {
@@ -292,34 +294,27 @@ class RestaurantController {
     this[VIEW].bindRestaurantsInMenu(this.handleRestaurant);
   };
 
-  //uso try-catch debido a infinidad de problemas que me han dado estos metodos
   handleProductsCategoryList = (categoryName) => {
     try {
       const category = this[MODEL].createCategory(categoryName, "");
       const dishes = this[MODEL].getDishesInCategory(category);
 
-      //Convierte el generador en un array para trabajar con él
       const dishesArray = [...dishes];
-
-      //Actualiza el contexto
       this.currentContext = {
         type: "category",
         name: `Categoría: ${categoryName}`,
         href: `#category-${categoryName}`,
       };
 
-      //Actualiza los breadcrumbs y muestra los platos
       this[VIEW].updateBreadcrumbs(
         this.currentContext.name,
         this.currentContext.href
       );
-
-      //Mostramos los platos en la vista
-      this[VIEW].listProducts(dishesArray, categoryName);
+      this[VIEW].listProducts(dishesArray, categoryName, this[USER] !== null);
       this[VIEW].bindShowProduct(this.handleShowProduct);
     } catch (error) {
       console.error("Error obteniendo platos para la categoría:", error);
-      this[VIEW].listProducts([], categoryName);
+      this[VIEW].listProducts([], categoryName, this[USER] !== null);
     }
   };
 
@@ -336,11 +331,15 @@ class RestaurantController {
       const dishesArray = [...dishes];
 
       // console.log("Platos disponibles con el alérgeno:", dishesArray);
-      this[VIEW].listProducts(dishesArray, `Platos con ${allergenName}`);
+      this[VIEW].listProducts(
+        dishesArray,
+        `Platos con ${allergenName}`,
+        this[USER] !== null
+      );
       this[VIEW].bindShowProduct(this.handleShowProduct);
     } catch (error) {
       console.error("Error obteniendo platos para el alérgeno:", error);
-      this[VIEW].listProducts([], allergenName);
+      this[VIEW].listProducts([], allergenName, this[USER] !== null);
     }
   };
 
@@ -352,10 +351,18 @@ class RestaurantController {
       const dishes = this[MODEL].getDishesInMenu(menu);
       const dishesArray = [...dishes];
 
-      this[VIEW].listProducts(dishesArray, `Menú "${menuName}"`);
+      this[VIEW].listProducts(
+        dishesArray,
+        `Menú "${menuName}"`,
+        this[USER] !== null
+      );
       this[VIEW].bindShowProduct(this.handleShowProduct);
     } catch (error) {
-      this[VIEW].listProducts([], `Platos del Menú ${menuName}`);
+      this[VIEW].listProducts(
+        [],
+        `Platos del Menú ${menuName}`,
+        this[USER] !== null
+      );
     }
   };
 
@@ -705,7 +712,6 @@ class RestaurantController {
 
   handleLogin = (username, password, remember) => {
     if (this[AUTH].validateUser(username, password)) {
-      alert("Hola admin");
       this[USER] = this[AUTH].getUser(username);
       this.onOpenSession();
       if (remember) {
@@ -729,7 +735,8 @@ class RestaurantController {
       this.handleRemoveCategoryForm,
       this.handleNewRestaurantForm,
       this.handleModifyCategoriesForm,
-      this.handleAssignDishesForm
+      this.handleAssignDishesForm,
+      this.handleShowFavDishes
     );
   }
 
@@ -746,6 +753,31 @@ class RestaurantController {
     this[VIEW].bindIdentificationLink(this.handleLoginForm);
     this[VIEW].removeAdminMenu();
   }
+
+  handleFavDish = (dishName) => {
+    const favDishes = JSON.parse(localStorage.getItem("favDishes")) || [];
+    if (!favDishes.includes(dishName)) {
+      favDishes.push(dishName);
+      localStorage.setItem("favDishes", JSON.stringify(favDishes));
+      this[VIEW].showFavDishModal(true, dishName);
+    } else {
+      this[VIEW].showFavDishModal(false, dishName);
+    }
+  };
+
+  handleShowFavDishes = () => {
+    const favDishes = JSON.parse(localStorage.getItem("favDishes")) || [];
+    const dishes = favDishes.map((dishName) =>
+      this[MODEL].createDish(dishName, "", [], "")
+    );
+    this[VIEW].listProducts(
+      dishes,
+      "Platos Favoritos",
+      this[USER] !== null,
+      false //se oculta el botón de favoritos en cada plato del showFavDishes
+    );
+    this[VIEW].bindShowProduct(this.handleShowProduct);
+  };
 }
 
 export default RestaurantController;

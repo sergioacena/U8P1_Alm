@@ -219,9 +219,60 @@ class RestaurantView {
     this.main.append(container);
   }
 
-  listProducts(products, title) {
-    // this.categories.replaceChildren();
-    this.main.replaceChildren();
+  //pre-t8
+  // listProducts(products, title) {
+  //   // this.categories.replaceChildren();
+  //   this.main.replaceChildren();
+  //   if (this.categories.children.length > 1)
+  //     this.categories.children[1].remove();
+  //   const container = document.createElement("div");
+  //   container.id = "product-list";
+  //   container.classList.add("container");
+  //   container.classList.add("my-3");
+  //   container.insertAdjacentHTML("beforeend", '<div class="row"> </div>');
+
+  //   //Se verifica que products no sea nulo/undefined
+  //   if (products && products.length) {
+  //     for (const dish of products) {
+  //       //Validamos que el objeto dish tenga la propiedad name
+  //       if (dish && dish.name) {
+  //         const div = document.createElement("div");
+  //         div.classList.add("col-md-4");
+  //         div.insertAdjacentHTML(
+  //           "beforeend",
+  //           `<figure class="card card-product-grid card-lg"> <a data-dish="${dish.name}" href="#single-product" class="img-wrap"><img class="${dish.constructor.name}-style" src="${dish.image}"></a>
+  //                   <figcaption class="info-wrap">
+  //                   <div class="row">
+  //                       <div class="col-md-8"> <a data-dish="${dish.name}" href="#single-product" class="title2">${dish.name}</a> </div>
+  //                       <div class="col-md-4">
+  //                       <div class="rating text-right"> <i class="bi bi-star-fill"></i> <i class="bi bi-star-fill"></i> <i class="bi bi-star-fill"></i> </div>
+  //                       </div>
+  //                   </div>
+  //                   </figcaption>
+  //                   </figure>`
+  //         );
+  //         container.children[0].append(div);
+  //       } else {
+  //         console.warn(
+  //           "Objeto `dish` no tiene la propiedad `name` definida:",
+  //           dish
+  //         );
+  //       }
+  //     }
+  //   } else {
+  //     console.warn("No hay productos disponibles para mostrar.");
+  //   }
+
+  //   container.insertAdjacentHTML(
+  //     "afterbegin",
+  //     `<h1 class= "title">${title}</h1><br>`
+  //   );
+  //   // this.categories.append(container);
+  //   this.main.append(container);
+  // }
+
+  listProducts(products, title, isLoggedIn, showFavButton = true) {
+    this.categories.replaceChildren();
     if (this.categories.children.length > 1)
       this.categories.children[1].remove();
     const container = document.createElement("div");
@@ -230,44 +281,70 @@ class RestaurantView {
     container.classList.add("my-3");
     container.insertAdjacentHTML("beforeend", '<div class="row"> </div>');
 
-    //Se verifica que products no sea nulo/undefined
-    if (products && products.length) {
-      for (const dish of products) {
-        //Validamos que el objeto dish tenga la propiedad name
-        if (dish && dish.name) {
-          const div = document.createElement("div");
-          div.classList.add("col-md-4");
-          div.insertAdjacentHTML(
-            "beforeend",
-            `<figure class="card card-product-grid card-lg"> <a data-dish="${dish.name}" href="#single-product" class="img-wrap"><img class="${dish.constructor.name}-style" src="${dish.image}"></a>
+    for (const dish of products) {
+      if (dish) {
+        const div = document.createElement("div");
+        div.classList.add("col-md-4");
+        div.insertAdjacentHTML(
+          "beforeend",
+          `<figure class="card card-product-grid card-lg">
+                    <a data-dish="${
+                      dish.name
+                    }" href="#single-product" class="img-wrap">
+                        <img class="${dish.constructor.name}-style" src="${
+            dish.image
+          }">
+                    </a>
                     <figcaption class="info-wrap">
-                    <div class="row">
-                        <div class="col-md-8"> <a data-dish="${dish.name}" href="#single-product" class="title2">${dish.name}</a> </div>
-                        <div class="col-md-4">
-                        <div class="rating text-right"> <i class="bi bi-star-fill"></i> <i class="bi bi-star-fill"></i> <i class="bi bi-star-fill"></i> </div>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <a data-dish="${
+                                  dish.name
+                                }" href="#single-product" class="title2">${
+            dish.name
+          }</a>
+                                ${
+                                  isLoggedIn && showFavButton
+                                    ? `<button class="fav-btn" data-dish="${dish.name}">Favorito</button>`
+                                    : ""
+                                }
+                            </div>
                         </div>
-                    </div>
                     </figcaption>
-                    </figure>`
-          );
-          container.children[0].append(div);
-        } else {
-          console.warn(
-            "Objeto `dish` no tiene la propiedad `name` definida:",
-            dish
-          );
-        }
+                </figure>`
+        );
+        container.children[0].append(div);
+      } else {
+        console.warn("Objeto `dish` no está definido:", dish);
       }
-    } else {
-      console.warn("No hay productos disponibles para mostrar.");
     }
-
     container.insertAdjacentHTML(
       "afterbegin",
-      `<h1 class= "title">${title}</h1><br>`
+      `<h1 class="title">${title}</h1><br>`
     );
-    // this.categories.append(container);
-    this.main.append(container);
+    this.categories.append(container);
+
+    if (isLoggedIn && showFavButton) {
+      this.bindFavButtons();
+    }
+  }
+
+  bindFavButtons() {
+    const favButtons = document.querySelectorAll(".fav-btn");
+    favButtons.forEach((button) => {
+      button.addEventListener("click", (event) => {
+        const dishName = event.target.getAttribute("data-dish");
+        this.handleFavDish(dishName);
+      });
+    });
+  }
+
+  handleFavDish(dishName) {
+    this.favDishHandler(dishName);
+  }
+
+  bindFavDishHandler(handler) {
+    this.favDishHandler = handler;
   }
 
   bindProductsCategoryList(handler) {
@@ -686,6 +763,11 @@ class RestaurantView {
       "beforeend",
       '<li><a id="lassignDishes" class="dropdown-item" href="#assign-dishes">Asignar o Desasignar Platos</a></li>'
     );
+    //fav dishes
+    suboptions.insertAdjacentHTML(
+      "beforeend",
+      '<li><a id="lfavDishes" class="dropdown-item" href="#fav-dishes">Mostrar platos favoritos</a></li>'
+    );
     menuOption.append(suboptions);
     this.menu.append(menuOption);
   }
@@ -698,7 +780,8 @@ class RestaurantView {
     hRemoveCategory,
     hNewRestaurant,
     hModCategories,
-    hAssignDishes
+    hAssignDishes,
+    lfavDishes
   ) {
     const newDishLink = document.getElementById("lnewDish");
     newDishLink.addEventListener("click", (event) => {
@@ -779,6 +862,19 @@ class RestaurantView {
         [],
         "#assign-dishes",
         { action: "assignDishes" },
+        "#",
+        event
+      );
+    });
+
+    //menú para platos favoritos
+    const favDishesLink = document.getElementById("lfavDishes");
+    favDishesLink.addEventListener("click", (event) => {
+      this[EXCECUTE_HANDLER](
+        lfavDishes,
+        [],
+        "#fav-dishes",
+        { action: "favDishes" },
         "#",
         event
       );
@@ -1446,77 +1542,6 @@ class RestaurantView {
     this.main.append(container);
   }
 
-  // showModifyCategoriesSelects(categoriesDish, categoriesNotInDish) {
-  //   const form = document.getElementsByName("fModCategories")[0];
-
-  //   //opcional
-  //   const existingDeassignCat = form.querySelector("#deassignCat");
-  //   if (existingDeassignCat)
-  //     existingDeassignCat.parentElement.parentElement.remove();
-
-  //   const existingAssignCat = form.querySelector("#assignCat");
-  //   if (existingAssignCat)
-  //     existingAssignCat.parentElement.parentElement.remove();
-
-  //   form.insertAdjacentHTML(
-  //     "beforeend",
-  //     `<div class="row d-flex justify-content-center">
-  //       <div class="col-md-6 mb-3">
-  //         <label class="form-label" for="deassignCat">Categorías a desasignar</label>
-  //         <div class="input-group">
-  //           <span class="input-group-text"><i class="bi bi-body-text"></i></span>
-  //           <select class="form-select" name="deassignCat" id="deassignCat">
-  //             <option value="" selected disabled>Selecciona una categoría</option>
-  //           </select>
-  //           <div class="invalid-feedback">Elija categorías a asignar o desasignar.</div>
-  //           <div class="valid-feedback">Correcto.</div>
-  //         </div>
-  //       </div>
-  //     </div>`
-  //   );
-
-  //   const deassignCat = form.querySelector("#deassignCat");
-  //   for (const cat of categoriesDish) {
-  //     deassignCat.insertAdjacentHTML(
-  //       "beforeend",
-  //       `<option value="${cat.name}">${cat.name}</option>`
-  //     );
-  //   }
-
-  //   form.insertAdjacentHTML(
-  //     "beforeend",
-  //     `<div class="row d-flex justify-content-center">
-  //       <div class="col-md-6 mb-3">
-  //         <label class="form-label" for="assignCat">Categorías a asignar</label>
-  //         <div class="input-group">
-  //           <span class="input-group-text"><i class="bi bi-body-text"></i></span>
-  //           <select class="form-select" name="assignCat" id="assignCat">
-  //             <option value="" selected disabled>Selecciona una categoría</option>
-  //           </select>
-  //           <div class="invalid-feedback">Elija categorías a asignar o desasignar.</div>
-  //           <div class="valid-feedback">Correcto.</div>
-  //         </div>
-  //       </div>
-  //     </div>`
-  //   );
-
-  //   const assignCat = form.querySelector("#assignCat");
-  //   for (const cat of categoriesNotInDish) {
-  //     assignCat.insertAdjacentHTML(
-  //       "beforeend",
-  //       `<option value="${cat.name}">${cat.name}</option>`
-  //     );
-  //   }
-
-  //   form.insertAdjacentHTML(
-  //     "beforeend",
-  //     `<div class="mb-12">
-  //       <button class="btn btn-primary" type="submit">Enviar</button>
-  //       <button class="btn btn-primary" type="reset">Cancelar</button>
-  //     </div>`
-  //   );
-  // }
-
   showModifyCategoriesSelects(categoriesInDish, categoriesOutsideDish) {
     const form = document.getElementsByName("fModCategories")[0];
 
@@ -1951,6 +1976,63 @@ class RestaurantView {
         handler();
         event.preventDefault();
       });
+  }
+
+  showFavDishes(dishes) {
+    //Cogemos los datos del iterador
+    const allDishes = dishes;
+
+    this.dishes.replaceChildren();
+    if (this.dishes.children.length > 1) this.dishes.children[1].remove();
+    const container = document.createElement("div");
+    container.id = "random-list";
+    container.classList.add("container");
+    container.classList.add("my-3");
+    container.insertAdjacentHTML("beforeend", '<div class="row"> </div>');
+
+    for (const product of allDishes) {
+      const div = document.createElement("div");
+      div.classList.add("col-md-4");
+      div.insertAdjacentHTML(
+        "beforeend",
+        `<figure class="card card-product-grid card-lg"> <a data-dish="${product.name}" href="#single-product" class="img-wrap"><img class="${product.constructor.name}-style" src="${product.image}"></a>
+					<figcaption class="info-wrap">
+						<div class="row">
+							<div class="col-md-12"> <a data-dish="${product.name}" href="#single-product" class="title">${product.name}</a> </div>
+						</div>
+					</figcaption>
+				</figure>`
+      );
+      container.children[0].append(div);
+    }
+    container.insertAdjacentHTML("afterbegin", `<h1>Todos los platos</h1><br>`);
+    this.dishes.append(container);
+  }
+
+  showFavDishModal(done, dishName, error) {
+    console.log(dishName);
+    const messageModalContainer = document.getElementById("messageModal");
+    const messageModal = new bootstrap.Modal("#messageModal");
+
+    const title = document.getElementById("messageModalTitle");
+    title.innerHTML = "Plato Favorito";
+    const body = messageModalContainer.querySelector(".modal-body");
+    body.replaceChildren();
+    if (done) {
+      body.insertAdjacentHTML(
+        "afterbegin",
+        `<div class="p-3">El plato <strong>${dishName}</strong> se ha añadido a favoritos.</div>`
+      );
+    } else {
+      body.insertAdjacentHTML(
+        "afterbegin",
+        `<div class="error text-danger p-3"><i class="bi bi-exclamation-triangle"></i> El plato <strong>${dishName}</strong> ya existe en favoritos.</div>`
+      );
+    }
+    messageModal.show();
+    messageModalContainer.addEventListener("hidden.bs.modal", {
+      once: true,
+    });
   }
 }
 
